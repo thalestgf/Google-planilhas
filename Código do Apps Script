@@ -1,0 +1,117 @@
+function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet();
+  var params = JSON.parse(e.postData.contents);
+  var action = params.action;
+
+  if (action === "escreverEmLista") {
+    return escreverEmLista(sheet, params);
+  } else if (action === "escreverEmCelula") {
+    return escreverEmCelula(sheet, params);
+  } else if (action === "lerCelula") {
+    return lerCelula(sheet, params);
+  } else if (action === "lerLinha") {
+    return lerLinha(sheet, params);
+  } else {
+    return ContentService.createTextOutput("Ação não reconhecida");
+  }
+}
+
+function escreverEmLista(sheet, params) {
+  var identificacao = params.identificacao;
+  var dados = params.dados;
+  var aba = sheet.getSheetByName(identificacao) || sheet.insertSheet(identificacao);
+  var ultimaLinha = aba.getLastRow() + 1;
+  var dataHora = new Date();
+  
+  aba.getRange(ultimaLinha, 1).setValue(dataHora.toLocaleDateString());
+  aba.getRange(ultimaLinha, 2).setValue(dataHora.toLocaleTimeString());
+  
+  for (var i = 0; i < dados.length; i++) {
+    aba.getRange(ultimaLinha, i + 3).setValue(dados[i]);
+  }
+  
+  return ContentService.createTextOutput("Dados salvos com sucesso");
+}
+
+function escreverEmLista(sheet, params) {
+  var identificacao = params.identificacao;
+  var dados = params.dados;
+  var aba = sheet.getSheetByName(identificacao) || sheet.insertSheet(identificacao);
+  var ultimaLinha = aba.getLastRow() + 1;
+  var dataHora = new Date();
+  
+  // Coluna 1: Data e hora juntas (formato completo)
+  aba.getRange(ultimaLinha, 1).setValue(dataHora); 
+  // Coluna 2: Somente data
+  aba.getRange(ultimaLinha, 2).setValue(dataHora.toLocaleDateString());
+  // Coluna 3: Somente hora
+  aba.getRange(ultimaLinha, 3).setValue(dataHora.toLocaleTimeString());
+  
+  // Os dados começam na coluna 4 
+  for (var i = 0; i < dados.length; i++) {
+    aba.getRange(ultimaLinha, i + 4).setValue(dados[i]);
+  }
+  
+  return ContentService.createTextOutput("Dados salvos com sucesso");
+}
+
+function escreverEmCelula(sheet, params) {
+  var identificacao = params.identificacao;
+  var celula = params.celula;
+  var dado = params.dado;
+  var aba = sheet.getSheetByName(identificacao) || sheet.insertSheet(identificacao);
+  
+  aba.getRange(celula).setValue(dado);
+  return ContentService.createTextOutput("Dado salvo na célula " + celula);
+}
+
+function lerCelula(sheet, params) {
+  var identificacao = params.identificacao;
+  var celula = params.celula;
+  var aba = sheet.getSheetByName(identificacao);
+  
+  if (!aba) {
+    return ContentService.createTextOutput("Aba não encontrada");
+  }
+  
+  var valor = aba.getRange(celula).getValue();
+  return ContentService.createTextOutput(valor);
+}
+
+function lerLinha(sheet, params) {
+  try {
+    Logger.log("Iniciando função lerLinha");
+    
+    var identificacao = params.identificacao;
+    var linha = params.linha;
+    
+    Logger.log("Identificação: " + identificacao);
+    Logger.log("Linha: " + linha);
+    
+    var aba = sheet.getSheetByName(identificacao);
+    
+    if (!aba) {
+      Logger.log("Aba não encontrada: " + identificacao);
+      return ContentService.createTextOutput("Aba não encontrada");
+    }
+    
+    Logger.log("Aba encontrada: " + identificacao);
+    
+    var valores = aba.getRange(linha, 1, 1, aba.getLastColumn()).getValues()[0];
+    
+    // Formata a data e hora
+    var dataFormatada = Utilities.formatDate(new Date(valores[0]), "GMT-3", "dd/MM/yyyy");
+    var horaFormatada = Utilities.formatDate(new Date(valores[1]), "GMT-3", "HH:mm:ss");
+    
+    // Substitui os valores originais pelos formatados
+    valores[0] = dataFormatada;
+    valores[1] = horaFormatada;
+    
+    Logger.log("Valores lidos da linha " + linha + ": " + valores.join(";"));
+    
+    return ContentService.createTextOutput(valores.join(";"));
+  } catch (e) {
+    Logger.log("Erro na função lerLinha: " + e.toString());
+    return ContentService.createTextOutput("Erro: " + e.toString());
+  }
+}
